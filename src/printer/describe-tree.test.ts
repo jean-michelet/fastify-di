@@ -50,13 +50,13 @@ describe("describeTree", () => {
     const expected = String.raw`🌳 mod root@m\d+ \(encapsulate=true\)
   📦 mod child@m\d+ \(encapsulate=true\)
     📦 mod grandchild@m\d+ \(encapsulate=true\)
-      ⚙️ prov grandChildProv@p\d+ \[singleton\]
+      🔧 prov grandChildProv@p\d+ \[singleton\]
   📦 mod sibling@m\d+ \(encapsulate=false\)
-    ⚙️ prov siblingProv@p\d+ \[transient\]
-    ⚙️ prov siblingDependent@p\d+ \[singleton\]
+    🔧 prov siblingProv@p\d+ \[transient\]
+    🔧 prov siblingDependent@p\d+ \[singleton\]
+      🔧 prov siblingProv@p\d+ \[transient\]
 `;
 
-    // add a trailing newline for match alignment
     t.assert.match(tree + "\n", new RegExp(expected));
 
     await app.close();

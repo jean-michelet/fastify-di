@@ -3,9 +3,9 @@ import { getProviderId, type ProviderAny } from "../providers/providers";
 
 const useColor = () => process.stdout.isTTY;
 const wrap = (code: number, s: string, enabled: boolean) => {
-    /* c8 ignore next - Only used by CLI */
-    return enabled ? `\x1b[${code}m${s}\x1b[0m` : s;
-}
+  /* c8 ignore next - Only used by CLI */
+  return enabled ? `\x1b[${code}m${s}\x1b[0m` : s;
+};
 
 const c = (enabled: boolean) => ({
   dim: (s: string) => wrap(2, s, enabled),
@@ -18,6 +18,22 @@ export function describeTree(root: ModuleAny): string {
   const lines: string[] = [];
   const col = c(useColor());
 
+  function walkProvider(p: ProviderAny, depth: number) {
+    const pad = "  ".repeat(depth);
+    const life = p.lifecycle;
+    const lifeCol = life === "transient" ? col.yellow(life) : col.green(life);
+
+    lines.push(
+      `${pad}🔧 ${col.dim("prov")} ` +
+        `${col.cyan(`${p.name}@${getProviderId(p)}`)} ` +
+        `[${lifeCol}]`,
+    );
+
+    for (const dep of Object.values(p.deps) as ProviderAny[]) {
+      walkProvider(dep, depth + 1);
+    }
+  }
+
   (function walk(m: ModuleAny, depth: number, isRoot = false) {
     const pad = "  ".repeat(depth);
     const emoji = isRoot ? "🌳" : "📦";
@@ -29,13 +45,7 @@ export function describeTree(root: ModuleAny): string {
     );
 
     for (const p of Object.values(m.providers) as ProviderAny[]) {
-      const life = p.lifecycle;
-      const lifeCol = life === "transient" ? col.yellow(life) : col.green(life);
-      lines.push(
-        `${pad}  ⚙️ ${col.dim("prov")} ` +
-          `${col.cyan(`${p.name}@${getProviderId(p)}`)} ` +
-          `[${lifeCol}]`,
-      );
+      walkProvider(p, depth + 1);
     }
     for (const s of m.subModules) walk(s, depth + 1);
   })(root, 0, true);
