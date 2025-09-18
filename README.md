@@ -76,6 +76,30 @@ app.register(usersPlugin);
 
 This couples tests to wiring details and leads to brittle test design.
 
+## Why not simply use Nest.js or `fastify-awilix`?
+
+**Nest.js** provides its own DI system but is framework-agnostic.
+It offers adapters for Fastify or Express, but does not leverage Fastify’s lifecycle, plugin system, or encapsulation. This is a conscious trade-off: you gain abstraction at the cost of alignment with Fastify’s core model.
+
+**`fastify-awilix`** integrates the Awilix container but relies on a **service locator pattern**:
+
+```ts
+app.post("/", async (req, res) => {
+  const userRepositoryForReq = req.diScope.resolve("userRepository");
+  const userRepositoryForApp = app.diContainer.resolve("userRepository"); // same result
+  const userService = req.diScope.resolve("userService");
+
+  res.send({ status: "OK" });
+});
+```
+
+This is not very different from using decorators directly:
+
+* Dependencies are still (potentially) resolved at runtime once plugins are built.
+* They remain implicit in function signatures -> hidden dependencies.
+
+As a result, it does not address the core issues with Fastify decorators highlighted earlier.
+
 ## What is `fastify-di`?
 
 `fastify-di` makes dependencies **explicit** with providers and modules.
