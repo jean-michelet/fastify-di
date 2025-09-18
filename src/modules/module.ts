@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
 import type { ProviderAny } from "../providers/providers";
-import type { Container } from "../container";
+import type { Container } from "../container/container";
+import { deepClone } from "../utils/deep-clone";
 
 export type ProviderValues<
   Providers extends Readonly<Record<string, ProviderAny>>,
@@ -25,6 +26,9 @@ export interface ModuleDef<
       [K in keyof Providers]: Awaited<ReturnType<Providers[K]["expose"]>>;
     };
   }) => unknown | Promise<unknown>;
+  override(
+    updater: (providers: Providers) => Providers,
+  ): ModuleDef<Providers, SubModules>;
   _mod?: never;
 }
 
@@ -33,7 +37,7 @@ export type ModuleAny = ModuleDef<any, any>;
 
 const kModuleId = Symbol("fastify-di:moduleId");
 let __seq = 0;
-const nextId = () => `m${(++__seq)}`;
+const nextId = () => `m${++__seq}`;
 
 /**
  * This is not a predictible id.
@@ -63,6 +67,17 @@ export function createModule<
     subModules: (def.subModules ?? []) as SubModules,
     encapsulate: def.encapsulate ?? true,
     accessFastify: def.accessFastify,
+    override(
+      updater: (providers: Providers) => Providers,
+    ): ModuleDef<Providers, SubModules> {
+      return createModule<Providers, SubModules>({
+        name: self.name,
+        providers: updater(deepClone(self.providers)),
+        subModules: deepClone(self.subModules),
+        encapsulate: self.encapsulate,
+        accessFastify: self.accessFastify,
+      })
+    },
   };
 
   Object.defineProperty(self, kModuleId, {

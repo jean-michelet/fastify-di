@@ -5,11 +5,11 @@ import Fastify, {
 
 export * from "./providers/providers";
 export * from "./modules/module";
-export * from "./container";
+export * from "./container/container";
 
 import { getModuleId, registerModule, type ModuleAny } from "./modules/module";
 import { getProviderId, resolveDeps, type ProviderAny } from "./providers/providers";
-import { Container } from "./container";
+import { Container } from "./container/container";
 import { describeTree } from "./printer/describe-tree";
 
 export interface CreateAppOptions {

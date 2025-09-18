@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "c8 --check-coverage node --import tsx --test src/**/*.test.ts",
+    "test": "c8 --check-coverage node --import tsx --test src/**/*.test.ts && tsd",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "format": "prettier -w ."
   },
@@ -33,6 +33,7 @@
     "eslint": "^9.35.0",
     "eslint-plugin-import": "^2.32.0",
     "prettier": "^3.6.2",
+    "tsd": "^0.33.0",
     "tsup": "^8.5.0",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
@@ -43,5 +44,8 @@
     "@fastify/helmet": "^13.0.1",
     "fastify": "^5.6.0",
     "fastify-plugin": "^5.0.1"
+  },
+  "tsd": {
+    "directory": "src"
   }
 }

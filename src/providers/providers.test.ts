@@ -402,4 +402,41 @@ describe("createProvider", () => {
       /Duplicate provider name "foo" bound to different instances: p\d+ vs p\d+\./,
     );
   });
+
+  test("provider.override replaces deps with same type", async (t: TestContext) => {
+    t.plan(1);
+
+    const db = createProvider({
+      name: "db",
+      expose: async () => ({ url: "real" }),
+    });
+
+    const repo = createProvider({
+      name: "repo",
+      deps: { db },
+      expose: async ({ db }) => db.url,
+    });
+
+    // override db with fake
+    const fakeDb = createProvider({
+      name: "db",
+      expose: async () => ({ url: "fake" }),
+    });
+
+    const repoDouble = repo.override((deps) => ({
+      ...deps,
+      db: fakeDb,
+    }));
+
+    const root = createModule({
+      name: "root",
+      providers: { repoDouble },
+      accessFastify({ deps }) {
+        t.assert.strictEqual(deps.repoDouble, "fake");
+      },
+    });
+
+    const app = await createApp({ root });
+    await app.close();
+  });
 });

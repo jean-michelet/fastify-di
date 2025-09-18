@@ -1,6 +1,6 @@
 import { describe, test, TestContext } from "node:test";
 import { createModule } from "./module";
-import { createApp } from "..";
+import { createApp, createProvider } from "..";
 
 describe("module integration", () => {
   test("createModule defaults + describeTree presence", async (t: TestContext) => {
@@ -248,5 +248,46 @@ describe("module integration", () => {
     const app = await createApp({ root });
 
     await app.close();
+  });
+
+  test("module.override replaces a provider with fake", async (t: TestContext) => {
+    t.plan(1);
+
+    const userRepo = createProvider({
+      name: "userRepo",
+      expose: async () => ({ find: () => "real" as string }),
+    });
+
+    const foundValues: string[] = [];
+    const root = createModule({
+      name: "root",
+      providers: { userRepo },
+      accessFastify({ deps }) {
+        foundValues.push(deps.userRepo.find());
+      },
+    });
+
+    const fakeUserRepo = createProvider({
+      name: "userRepo",
+      expose: async () => ({ find: () => "fake" as string }),
+    });
+
+    const rootDouble = root.override((providers) => ({
+      ...providers,
+      userRepo: fakeUserRepo,
+    }));
+
+    const app = await createApp({
+      root: root,
+    });
+
+    const doubleApp = await createApp({
+      root: rootDouble,
+    });
+
+    t.assert.deepStrictEqual(foundValues, ["real", "fake"]);
+
+    await app.close();
+    await doubleApp.close();
   });
 });

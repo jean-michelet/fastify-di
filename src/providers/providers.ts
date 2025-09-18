@@ -1,9 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import { Container } from "../container";
+import { Container } from "../container/container";
+import { deepClone } from "../utils/deep-clone";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type BivariantCallback<T extends (...args: any) => any> =
-  { bivarianceHack: T }["bivarianceHack"];
+export type BivariantCallback<T extends (...args: any) => any> = {
+  bivarianceHack: T;
+}["bivarianceHack"];
 
 export type ProviderLifecycle = "singleton" | "transient";
 
@@ -17,12 +19,13 @@ export type DepValues<ProviderDepsMap extends BaseProviderDepsMap> = {
   >;
 };
 
-type ProviderHook<D extends BaseProviderDepsMap, V> =
-  BivariantCallback<(ctx: {
+type ProviderHook<D extends BaseProviderDepsMap, V> = BivariantCallback<
+  (ctx: {
     fastify: FastifyInstance;
     deps: DepValues<D>;
     value: V;
-  }) => unknown | Promise<unknown>>;
+  }) => unknown | Promise<unknown>
+>;
 
 export interface ProviderDef<
   ProviderDepsMap extends BaseProviderDepsMap = BaseProviderDepsMap,
@@ -31,20 +34,28 @@ export interface ProviderDef<
   name: string;
   lifecycle: ProviderLifecycle;
   deps: ProviderDepsMap;
-
-  expose: (deps: DepValues<ProviderDepsMap>) => Value | Promise<Value>;
-
   onReady?: ProviderHook<ProviderDepsMap, Value>;
   onClose?: ProviderHook<ProviderDepsMap, Value>;
-
+  expose: (deps: DepValues<ProviderDepsMap>) => Value | Promise<Value>;
   resolve: () => Promise<Value>;
+
+  override(
+    updater: (existingDeps: ProviderDepsMap) => ProviderDepsMap,
+  ): ProviderDef<ProviderDepsMap, Value>;
 
   _prov?: never;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ProviderContract<Value> = ProviderDef<any, Value>;
+
+export type InferProviderContract<P> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  P extends ProviderDef<any, infer Value> ? ProviderContract<Value> : never;
+
 const kProviderId = Symbol("fastify-di:providerId");
 let __seq = 0;
-const nextId = () => `p${(++__seq)}`;
+const nextId = () => `p${++__seq}`;
 
 /**
  * This is not a predictible id.
@@ -72,13 +83,24 @@ export function createProvider<
     onReady: def.onReady,
     onClose: def.onClose,
     resolve: async () => new Container().get(self),
+    override(
+      updater: (existingDeps: ProviderDepsMap) => ProviderDepsMap,
+    ): ProviderDef<ProviderDepsMap, Value> {
+      return createProvider<ProviderDepsMap, Value>({
+        name: self.name,
+        lifecycle: self.lifecycle,
+        deps: updater(deepClone(self.deps)),
+        expose: self.expose,
+        onReady: self.onReady,
+        onClose: self.onClose,
+      });
+    },
   };
 
   Object.defineProperty(self, kProviderId, {
     value: nextId(),
     enumerable: false,
   });
-
 
   return self;
 }

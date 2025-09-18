@@ -34,7 +34,7 @@ export function describeTree(root: ModuleAny): string {
     }
   }
 
-  (function walk(m: ModuleAny, depth: number, isRoot = false) {
+  function walk(m: ModuleAny, depth: number, isRoot = false) {
     const pad = "  ".repeat(depth);
     const emoji = isRoot ? "🌳" : "📦";
 
@@ -47,8 +47,13 @@ export function describeTree(root: ModuleAny): string {
     for (const p of Object.values(m.providers) as ProviderAny[]) {
       walkProvider(p, depth + 1);
     }
-    for (const s of m.subModules) walk(s, depth + 1);
-  })(root, 0, true);
+    
+    for (const s of m.subModules) {
+      walk(s, depth + 1);
+    }
+  }
+
+  walk(root, 0, true);
 
   return lines.join("\n");
 }
