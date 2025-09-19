@@ -1,6 +1,6 @@
 # Fastify Dependency Injection
 
-## Proposal to Adopt as an Official Package
+## Proposal to Adopt as an Official Package (WIP)
 
 Bring `jean-michelet/fastify-di` under the Fastify organization as an official package.
 This would strengthen Fastify’s ecosystem by providing a native, well-integrated dependency injection (DI) solution
@@ -451,6 +451,7 @@ By default, providers return whatever `expose` yields. To reduce accidental muta
 - Transients can be combined with `deepClone` to guarantee isolation.
 - Singletons can be frozen manually or wrapped in factories.
 
+
 This design lets teams decide their own trade-off between performance and immutability guarantees.
 
 ### How are resources like databases or connections disposed of?
@@ -459,4 +460,6 @@ Every provider can implement an `onClose` hook. During `fastify.close()`, the ap
 
 This ensures external resources (DB pools, sockets, caches) are cleaned up deterministically.
 
-⚠️ Note: For **transient** providers, `onClose` is currently shared across all instances of the provider. That means if a transient exposes multiple values during its lifetime, its `onClose` will not be called once per instance, but once for the provider as a whole. This is a limitation to be addressed in future iterations.
+⚠️ Note: For **transient** providers, `onClose` is currently shared across all instances of the provider. 
+That means if a transient exposes multiple values during its lifetime, its `onClose` will not be called once per instance, but 
+once for the provider as a whole. This is a limitation to be addressed before posting this proposal.
