@@ -106,7 +106,7 @@ As a result, it does not address the core issues with Fastify decorators highlig
 - These **deps** are injected into its `expose` function at runtime.
 - `expose` returns the actual value (config object, DB client, repository, service, etc.) that other providers or modules consume.
 - A provider can be `singleton` (one instance per app) or `transient` (new instance per injection).
-- Providers can hook into the Fastify lifecycle (`onReady`, `onClose`).
+- Providers (`singleton` only) can hook into the Fastify lifecycle (`onReady`, `onClose`).
 
 **Module.** A higher-level building block used to group **providers and submodules**, and to wire them into Fastify routes, hooks, or plugins.
 
