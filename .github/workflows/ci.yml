@@ -25,3 +25,4 @@ jobs:
     uses: fastify/workflows/.github/workflows/plugins-ci.yml@v5
     with:
       lint: true
+      node-versions: ["22", "24"]

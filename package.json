@@ -20,7 +20,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "npm run build && npm run test:unit",
-    "test:unit": "c8 --check-coverage node --import tsx --test $(npx glob 'src/**/*.test.ts') && tsd",
+    "test:unit": "c8 --check-coverage node --import tsx --test \"src/**/*.test.ts\" && tsd",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "format": "prettier -w ."
   },
