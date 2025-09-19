@@ -37,7 +37,7 @@ export async function createApp({
   const allProviders = new Set<ProviderAny>();
   walkModules(root, (m) => {
     ensureModuleNameUnicity(moduleNameToId, m);
-    Object.values(m.providers).forEach((p) => {
+    Object.values(m.deps).forEach((p) => {
       walkProviders(p as ProviderAny, (pp) => {
         ensureProviderNameUnicity(providerNameToId, pp as ProviderAny);
         allProviders.add(pp as ProviderAny);

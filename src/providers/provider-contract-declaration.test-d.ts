@@ -51,7 +51,7 @@ expectType<YContract>(yBis);
 function createUsersModule(yDep: YContract) {
   return createModule({
     name: "users",
-    providers: { yDep },
+    deps: { yDep },
     accessFastify({ deps }) {
       expectType<{ y: number }>(deps.yDep);
     },

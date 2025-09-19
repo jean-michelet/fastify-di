@@ -250,7 +250,7 @@ describe("module integration", () => {
     await app.close();
   });
 
-  test("module.override replaces a provider with fake", async (t: TestContext) => {
+  test("module.withProviders replaces a provider with fake", async (t: TestContext) => {
     t.plan(1);
 
     const userRepo = createProvider({
@@ -261,7 +261,7 @@ describe("module integration", () => {
     const foundValues: string[] = [];
     const root = createModule({
       name: "root",
-      providers: { userRepo },
+      deps: { userRepo },
       accessFastify({ deps }) {
         foundValues.push(deps.userRepo.find());
       },
@@ -272,7 +272,7 @@ describe("module integration", () => {
       expose: async () => ({ find: () => "fake" as string }),
     });
 
-    const rootDouble = root.override((providers) => ({
+    const rootDouble = root.withProviders((providers) => ({
       ...providers,
       userRepo: fakeUserRepo,
     }));

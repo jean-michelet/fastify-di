@@ -39,7 +39,7 @@ export interface ProviderDef<
   expose: (deps: DepValues<ProviderDepsMap>) => Value | Promise<Value>;
   resolve: () => Promise<Value>;
 
-  override(
+  withProviders(
     updater: (existingDeps: ProviderDepsMap) => ProviderDepsMap,
   ): ProviderDef<ProviderDepsMap, Value>;
 
@@ -53,7 +53,7 @@ export type InferProviderContract<P> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   P extends ProviderDef<any, infer Value> ? ProviderContract<Value> : never;
 
-const kProviderId = Symbol("fastify-di:providerId");
+const kProviderId = Symbol("fastify-dependency-injection:providerId");
 let __seq = 0;
 const nextId = () => `p${++__seq}`;
 
@@ -83,7 +83,7 @@ export function createProvider<
     onReady: def.onReady,
     onClose: def.onClose,
     resolve: async () => new Container().get(self),
-    override(
+    withProviders(
       updater: (existingDeps: ProviderDepsMap) => ProviderDepsMap,
     ): ProviderDef<ProviderDepsMap, Value> {
       return createProvider<ProviderDepsMap, Value>({

@@ -25,7 +25,7 @@ describe("describeTree", () => {
 
     const grandChild = createModule({
       name: "grandchild",
-      providers: { grandChildProvider },
+      deps: { grandChildProvider },
     });
 
     const child = createModule({
@@ -36,7 +36,7 @@ describe("describeTree", () => {
     const sibling = createModule({
       name: "sibling",
       encapsulate: false,
-      providers: { siblingProvider, siblingDependent },
+      deps: { siblingProvider, siblingDependent },
     });
 
     const root = createModule({

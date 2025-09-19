@@ -25,7 +25,9 @@ const repo = createProvider({
   expose: ({ db }) => db.url,
 });
 
-const repoDouble = repo.override((deps) => ({
+
+
+const repoDouble = repo.withProviders((deps) => ({
   ...deps,
   db, // reuse db, or swap with another DbContract
 }));
@@ -48,14 +50,14 @@ expectType<
   >
 >(repoDouble);
 
-expectError(repo.override((deps) => ({ ...deps, db: 1 })));
+expectError(repo.withProviders((deps) => ({ ...deps, db: 1 })));
 
 const usersModule = createModule({
   name: "users",
-  providers: { repo },
+  deps: { repo },
 });
 
-const usersModuleDouble = usersModule.override((providers) => ({
+const usersModuleDouble = usersModule.withProviders((providers) => ({
   ...providers,
   repo,
 }));
@@ -88,4 +90,5 @@ expectType<
   >
 >(usersModuleDouble);
 
-expectError(usersModule.override((providers) => ({ ...providers, repo: 123 })));
+
+expectError(usersModule.withProviders((providers) => ({ ...providers, repo: 123 })));

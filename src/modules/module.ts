@@ -17,7 +17,7 @@ export interface ModuleDef<
   SubModules extends ReadonlyArray<ModuleAny> = ReadonlyArray<ModuleAny>,
 > {
   name: string;
-  providers: Providers;
+  deps: Providers;
   subModules: SubModules;
   encapsulate: boolean;
   accessFastify?: (ctx: {
@@ -26,8 +26,8 @@ export interface ModuleDef<
       [K in keyof Providers]: Awaited<ReturnType<Providers[K]["expose"]>>;
     };
   }) => unknown | Promise<unknown>;
-  override(
-    updater: (providers: Providers) => Providers,
+  withProviders(
+    updater: (deps: Providers) => Providers,
   ): ModuleDef<Providers, SubModules>;
   _mod?: never;
 }
@@ -35,7 +35,7 @@ export interface ModuleDef<
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ModuleAny = ModuleDef<any, any>;
 
-const kModuleId = Symbol("fastify-di:moduleId");
+const kModuleId = Symbol("fastify-dependency-injection:moduleId");
 let __seq = 0;
 const nextId = () => `m${++__seq}`;
 
@@ -51,7 +51,7 @@ export function createModule<
   const SubModules extends ReadonlyArray<ModuleAny>,
 >(def: {
   name: string;
-  providers?: Providers;
+  deps?: Providers;
   subModules?: SubModules;
   encapsulate?: boolean;
   accessFastify?: (ctx: {
@@ -63,16 +63,16 @@ export function createModule<
 }): ModuleDef<Providers, SubModules> {
   const self = {
     name: def.name,
-    providers: (def.providers ?? {}) as Providers,
+    deps: (def.deps ?? {}) as Providers,
     subModules: (def.subModules ?? []) as SubModules,
     encapsulate: def.encapsulate ?? true,
     accessFastify: def.accessFastify,
-    override(
-      updater: (providers: Providers) => Providers,
+    withProviders(
+      updater: (deps: Providers) => Providers,
     ): ModuleDef<Providers, SubModules> {
       return createModule<Providers, SubModules>({
         name: self.name,
-        providers: updater(deepClone(self.providers)),
+        deps: updater(deepClone(self.deps)),
         subModules: deepClone(self.subModules),
         encapsulate: self.encapsulate,
         accessFastify: self.accessFastify,
@@ -94,7 +94,7 @@ export async function registerModule(
   container: Container,
 ): Promise<void> {
   const plugin = async (instance: FastifyInstance) => {
-    const localValues = await resolveProviderMap(container, mod.providers);
+    const localValues = await resolveProviderMap(container, mod.deps);
     if (mod.accessFastify) {
       await mod.accessFastify({ fastify: instance, deps: localValues });
     }
@@ -118,7 +118,7 @@ async function resolveProviderMap(
 ) {
   const out: Record<string, unknown> = {};
   for (const [k, p] of Object.entries(map)) {
-    out[k] = await container.get(p);
+    out[k] = await container.get(p); // return always a new instance if transiant
   }
 
   return out;

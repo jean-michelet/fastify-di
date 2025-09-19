@@ -44,7 +44,7 @@ export function describeTree(root: ModuleAny): string {
         `${col.dim(`(encapsulate=${m.encapsulate !== false})`)}`,
     );
 
-    for (const p of Object.values(m.providers) as ProviderAny[]) {
+    for (const p of Object.values(m.deps) as ProviderAny[]) {
       walkProvider(p, depth + 1);
     }
     

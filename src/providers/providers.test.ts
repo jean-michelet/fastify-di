@@ -32,7 +32,7 @@ describe("createProvider", () => {
 
     const root = createModule({
       name: "root",
-      providers: {
+      deps: {
         bar,
       },
       accessFastify({ fastify, deps }) {
@@ -63,7 +63,7 @@ describe("createProvider", () => {
 
     const root = createModule({
       name: "root",
-      providers: {
+      deps: {
         foo,
         fooChild,
       },
@@ -124,7 +124,7 @@ describe("createProvider", () => {
 
     const root = createModule({
       name: "root",
-      providers: {
+      deps: {
         fooChild,
       },
     });
@@ -171,7 +171,7 @@ describe("createProvider", () => {
 
     const root = createModule({
       name: "root",
-      providers: { bar, baz },
+      deps: { bar, baz },
     });
 
     const app = await createApp({ root });
@@ -218,7 +218,7 @@ describe("createProvider", () => {
 
     const root = createModule({
       name: "root",
-      providers: { baz, taz },
+      deps: { baz, taz },
     });
 
     const app = await createApp({ root });
@@ -256,7 +256,7 @@ describe("createProvider", () => {
 
     const root = createModule({
       name: "root",
-      providers: { bar, baz },
+      deps: { bar, baz },
     });
 
     const app = await createApp({ root });
@@ -303,7 +303,7 @@ describe("createProvider", () => {
 
     const root = createModule({
       name: "root",
-      providers: { baz, taz },
+      deps: { baz, taz },
     });
 
     const app = await createApp({ root });
@@ -351,7 +351,7 @@ describe("createProvider", () => {
 
     const root = createModule({
       name: "root",
-      providers: { baz, taz },
+      deps: { baz, taz },
     });
 
     const app = await createApp({ root });
@@ -392,7 +392,7 @@ describe("createProvider", () => {
 
     const root = createModule({
       name: "root",
-      providers: {
+      deps: {
         bar,
       },
     });
@@ -403,7 +403,7 @@ describe("createProvider", () => {
     );
   });
 
-  test("provider.override replaces deps with same type", async (t: TestContext) => {
+  test("provider.withProviders replaces deps with same type", async (t: TestContext) => {
     t.plan(1);
 
     const db = createProvider({
@@ -417,20 +417,20 @@ describe("createProvider", () => {
       expose: async ({ db }) => db.url,
     });
 
-    // override db with fake
     const fakeDb = createProvider({
       name: "db",
       expose: async () => ({ url: "fake" }),
     });
 
-    const repoDouble = repo.override((deps) => ({
+    // create a double with fake db
+    const repoDouble = repo.withProviders((deps) => ({
       ...deps,
       db: fakeDb,
     }));
 
     const root = createModule({
       name: "root",
-      providers: { repoDouble },
+      deps: { repoDouble },
       accessFastify({ deps }) {
         t.assert.strictEqual(deps.repoDouble, "fake");
       },
