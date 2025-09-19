@@ -1,15 +1,21 @@
 # Fastify Dependency Injection
 
-## Proposal to Adopt as an Official Package (WIP)
+> ⚠️ **Work in Progress**
+>
+> - If you find the idea valuable and would like to see it officially proposed to the Fastify ecosystem, please **⭐ star this repository**.
+> - You can also [open an issue](https://github.com/jean-michelet/fastify-di/issues/new) to share feedback, suggest improvements, or contribute ideas.
+> - Community feedback at this stage is crucial - your input can directly shape whether this package has a chance to be accepted.
+
+## Proposal to Adopt as an Official Package
 
 Bring `jean-michelet/fastify-di` under the Fastify organization as an official package.
 This would strengthen Fastify’s ecosystem by providing a native, well-integrated dependency injection (DI) solution
-that aligns with Fastify’s model without pushing users toward external frameworks or ad-hoc patterns.
+that aligns with Fastify’s model without pushing users toward external frameworks.
 
 ## Why under the Fastify org?
 
 - **Native alignment.** Built around Fastify’s encapsulation, lifecycle, and plugin system.
-- **Minimal.** ~1.5k LOC including tests and types.
+- **Minimal.** under [**2k LOC**](https://api.codetabs.com/v1/loc/?github=jean-michelet/fastify-di) including tests and types.
 - **Type-safe.** Leverages TypeScript for dependency contracts.
 - **Improves testing.** Explicit declarations, override utilities, and type helpers to apply the Dependency Inversion Principle.
 - **Community benefit.** Addresses long-standing ergonomics issues ([#5061](https://github.com/fastify/fastify/issues/5061)) that decorators alone do not resolve.
@@ -256,7 +262,7 @@ const usersModuleInMemory = createUsersModule(fakeUsersRepository);
 
 ## Creating Provider and Module Doubles for Tests
 
-If you don’t want to depend on contracts but still need to replace real dependencies with fakes in tests, `fastify-dependency-injection` supports this through `withProviders`, which **deep-clones a provider or module** and lets you override some of its dependencies.
+If you don’t want to depend on contracts but still need to replace real dependencies with fakes in tests, `fastify-di` supports this through `withProviders`, which **deep-clones a provider or module** and lets you override some of its dependencies.
 
 This avoids monkey-patching and keeps your dependency graph explicit while providing a safe way to build test doubles.
 
@@ -359,7 +365,7 @@ If the organization has a formal process for “experimental” features, this p
 
 ### Do providers introduce hidden dependencies?
 
-No. Providers must explicitly declare their `deps`. When the container instantiates a provider, it 
+No. Providers must explicitly declare their `deps`. When the container instantiates a provider, it
 recursively resolves all declared dependencies by calling `container.get()` on them.
 
 This means:
@@ -377,17 +383,17 @@ Not through the public API. Providers are resolved top-down:
 - `Container.get()` first checks whether the provider is singleton or transient.
 - To instantiate a provider, `instantiate()` recursively resolves its dependencies before calling `expose()`.
 
-Because `createProvider` requires that dependencies be other providers, and because the resolution is a 
-direct recursive call, a true cycle would trigger infinite recursion. 
+Because `createProvider` requires that dependencies be other providers, and because the resolution is a
+direct recursive call, a true cycle would trigger infinite recursion.
 But you cannot actually build such a cycle unless you manually mutate the provider tree after creation.
 
 ### Example: Attempt to Create a Circular Reference
 
-With a **classic DI container** (like in NestJS), you can easily wire services in a 
+With a **classic DI container** (like in NestJS), you can easily wire services in a
 cycle — the framework only detects it later, during runtime resolution:
 
 ```ts
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class A {
@@ -412,7 +418,7 @@ It does immediately prevents cycles:
 ```ts
 const A = createProvider({
   name: "A",
-  deps: { B }, 
+  deps: { B },
   // Error: Variable 'B' is used before being assigned.
   expose: ({ B }) => ({}),
 });
@@ -451,18 +457,17 @@ By default, providers return whatever `expose` yields. To reduce accidental muta
 - Transients can be combined with `deepClone` to guarantee isolation.
 - Singletons can be frozen manually or wrapped in factories.
 
-
 This design lets teams decide their own trade-off between performance and immutability guarantees.
 
 ### How are resources like databases or connections disposed of?
 
 Every **singleton** provider can declare an `onClose` hook.
-When `fastify.close()` runs, the app resolves all providers and calls their `onClose` 
+When `fastify.close()` runs, the app resolves all providers and calls their `onClose`
 handlers, ensuring resources (DB pools, sockets, caches) are released deterministically.
 
 **Transient** providers are ephemeral factories:
 they may be created many times and cannot share lifecycle hooks.
-If cleanup is needed in a transient context, expose a `close`/`onClose` method 
+If cleanup is needed in a transient context, expose a `close`/`onClose` method
 from the value itself and wire it into Fastify’s lifecycle at the module level.
 
 #### Example: cleaning up resources in a transient provider

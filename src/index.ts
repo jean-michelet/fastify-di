@@ -7,7 +7,11 @@ export * from "./providers/providers";
 export * from "./modules/module";
 export * from "./container/container";
 
-import { getModuleId, registerModule, type ModuleAny } from "./modules/module";
+import {
+  getModuleId,
+  registerModule,
+  type ModuleAny,
+} from "./modules/module";
 import {
   getProviderId,
   resolveDeps,

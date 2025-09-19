@@ -63,7 +63,7 @@ export type InferProviderContract<P> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   P extends ProviderDef<any, infer Value> ? ProviderContract<Value> : never;
 
-const kProviderId = Symbol("fastify-dependency-injection:providerId");
+const kProviderId = Symbol("fastify-di:providerId");
 let __seq = 0;
 const nextId = () => `p${++__seq}`;
 
@@ -148,3 +148,4 @@ and do not share hooks across instances.
 Use a singleton provider if you need lifecycle management.`,
   );
 }
+
