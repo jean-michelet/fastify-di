@@ -19,7 +19,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "c8 --check-coverage node --import tsx --test src/**/*.test.ts && tsd",
+    "test": "npm run build && npm run test:unit",
+    "test:unit": "c8 --check-coverage node --import tsx --test src/**/*.test.ts && tsd",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "format": "prettier -w ."
   },
