@@ -27,6 +27,15 @@ type ProviderHook<D extends BaseProviderDepsMap, V> = BivariantCallback<
   }) => unknown | Promise<unknown>
 >;
 
+type ProviderErrorHook<D extends BaseProviderDepsMap, V> = BivariantCallback<
+  (ctx: {
+    fastify: FastifyInstance;
+    deps: DepValues<D>;
+    value: V;
+    error: unknown;
+  }) => unknown | Promise<unknown>
+>;
+
 export interface ProviderDef<
   ProviderDepsMap extends BaseProviderDepsMap = BaseProviderDepsMap,
   Value = unknown,
@@ -36,6 +45,7 @@ export interface ProviderDef<
   deps: ProviderDepsMap;
   onReady?: ProviderHook<ProviderDepsMap, Value>;
   onClose?: ProviderHook<ProviderDepsMap, Value>;
+  onError?: ProviderErrorHook<ProviderDepsMap, Value>;
   expose: (deps: DepValues<ProviderDepsMap>) => Value | Promise<Value>;
   resolve: () => Promise<Value>;
 
@@ -74,7 +84,19 @@ export function createProvider<
   expose: (deps: DepValues<ProviderDepsMap>) => Value | Promise<Value>;
   onReady?: ProviderHook<ProviderDepsMap, Value>;
   onClose?: ProviderHook<ProviderDepsMap, Value>;
+  onError?: ProviderErrorHook<ProviderDepsMap, Value>;
 }): ProviderDef<ProviderDepsMap, Value> {
+  if (def.lifecycle === "transient") {
+    if (def.onReady) {
+      throwTransientHookedError("onReady", def.name);
+    }
+    if (def.onClose) {
+      throwTransientHookedError("onClose", def.name);
+    }
+    if (def.onError) {
+      throwTransientHookedError("onError", def.name);
+    }
+  }
   const self: ProviderDef<ProviderDepsMap, Value> = {
     name: def.name,
     lifecycle: def.lifecycle ?? "singleton",
@@ -113,4 +135,16 @@ export async function resolveDeps(container: Container, prov: ProviderAny) {
   }
 
   return out;
+}
+
+export function throwTransientHookedError(
+  hook: "onClose" | "onReady" | "onError",
+  name: string,
+): never {
+  throw new Error(
+    `Provider "${name}" is declared as transient but defines a "${hook}" hook. 
+Transient providers are ephemeral value factories: they may be instantiated many times 
+and do not share hooks across instances. 
+Use a singleton provider if you need lifecycle management.`,
+  );
 }

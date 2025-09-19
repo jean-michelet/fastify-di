@@ -456,10 +456,37 @@ This design lets teams decide their own trade-off between performance and immuta
 
 ### How are resources like databases or connections disposed of?
 
-Every provider can implement an `onClose` hook. During `fastify.close()`, the app walks all registered providers, resolves their dependencies, retrieves the provider’s instance, and calls its `onClose` handler.
+Every **singleton** provider can declare an `onClose` hook.
+When `fastify.close()` runs, the app resolves all providers and calls their `onClose` 
+handlers, ensuring resources (DB pools, sockets, caches) are released deterministically.
 
-This ensures external resources (DB pools, sockets, caches) are cleaned up deterministically.
+**Transient** providers are ephemeral factories:
+they may be created many times and cannot share lifecycle hooks.
+If cleanup is needed in a transient context, expose a `close`/`onClose` method 
+from the value itself and wire it into Fastify’s lifecycle at the module level.
 
-⚠️ Note: For **transient** providers, `onClose` is currently shared across all instances of the provider. 
-That means if a transient exposes multiple values during its lifetime, its `onClose` will not be called once per instance, but 
-once for the provider as a whole. This is a limitation to be addressed before posting this proposal.
+#### Example: cleaning up resources in a transient provider
+
+```ts
+// db provider (transient)
+const transientProvider = createProvider({
+  name: "transientProvider",
+  lifecycle: "transient",
+  expose: () => {
+    return {
+      onClose: async () => client.close(),
+    };
+  },
+});
+
+// module using the provider
+const dbModule = createModule({
+  name: "dbModule",
+  deps: { transientProvider },
+  accessFastify({ fastify, deps }) {
+    fastify.addHook("onClose", async () => {
+      await deps.transientProvider.onClose();
+    });
+  },
+});
+```

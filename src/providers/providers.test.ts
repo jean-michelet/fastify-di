@@ -229,6 +229,37 @@ describe("createProvider", () => {
     await app.close();
   });
 
+  test("transient provider can expose a manual onClose method for cleanup", async (t: TestContext) => {
+    t.plan(1);
+
+    let closed = false;
+    const db = createProvider({
+      name: "db",
+      lifecycle: "transient",
+      expose: async () => ({
+        onClose: async () => {
+          closed = true;
+        },
+      }),
+    });
+
+    const dbModule = createModule({
+      name: "dbModule",
+      deps: { db },
+      accessFastify({ fastify, deps }) {
+        fastify.addHook("onClose", async () => {
+          await deps.db.onClose();
+        });
+      },
+    });
+
+    const app = await createApp({ root: dbModule });
+
+    await app.close();
+
+    t.assert.ok(closed);
+  });
+
   test("singleton providers", async (t: TestContext) => {
     t.plan(1);
 
@@ -438,5 +469,43 @@ describe("createProvider", () => {
 
     const app = await createApp({ root });
     await app.close();
+  });
+
+  test("transient providers cannot declare lifecycle hooks", async (t: TestContext) => {
+    t.plan(3);
+
+    t.assert.throws(
+      () =>
+        createProvider({
+          name: "badTransientReady",
+          lifecycle: "transient",
+          expose: async () => ({}),
+          onReady: async () => {},
+        }),
+      /Provider "badTransientReady" is declared as transient but defines a "onReady" hook/i,
+    );
+
+    t.assert.throws(
+      () =>
+        createProvider({
+          name: "badTransientClose",
+          lifecycle: "transient",
+          expose: async () => ({}),
+          onClose: async () => {},
+        }),
+      /Provider "badTransientClose" is declared as transient but defines a "onClose" hook/i,
+    );
+
+    t.assert.throws(
+      () =>
+        createProvider({
+          name: "badTransientError",
+          lifecycle: "transient",
+          expose: async () => ({}),
+          // once onError is supported in ProviderDef:
+          onError: async () => {},
+        }),
+      /Provider "badTransientError" is declared as transient but defines a "onError" hook/i,
+    );
   });
 });

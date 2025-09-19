@@ -8,7 +8,11 @@ export * from "./modules/module";
 export * from "./container/container";
 
 import { getModuleId, registerModule, type ModuleAny } from "./modules/module";
-import { getProviderId, resolveDeps, type ProviderAny } from "./providers/providers";
+import {
+  getProviderId,
+  resolveDeps,
+  type ProviderAny,
+} from "./providers/providers";
 import { Container } from "./container/container";
 import { describeTree } from "./printer/describe-tree";
 
