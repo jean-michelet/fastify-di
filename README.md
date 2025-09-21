@@ -42,7 +42,7 @@ that aligns with Fastify’s model without pushing users toward external framewo
 
 Domains=200, Services per domain=5, Total services=1000
 
-## baseline
+#### baseline
 
 | Metric | fastify-native | fastify-di | Δ (DI vs Native) |
 |---|---:|---:|---:|
