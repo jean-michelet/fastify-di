@@ -29,6 +29,28 @@ that aligns with Fastify’s model without pushing users toward external framewo
 
 > **Note.** I can implement changes if they are deemed necessary.
 
+### Benchmarks
+
+#### Environment
+
+* **OS:** Ubuntu 22.04.5 LTS
+* **CPU:** Intel Core i7-1165G7
+* **Memory:** 16 GB RAM
+* **Node.js:** v24.7.0
+
+*connections=100, duration=10s, pipelining=1, warmup=3s*
+
+Domains=200, Services per domain=5, Total services=1000
+
+## baseline
+
+| Metric | fastify-native | fastify-di | Δ (DI vs Native) |
+|---|---:|---:|---:|
+| **Throughput (req/s avg)** | 50,025 | 50,492 | 0.93% |
+| **Latency p99 (ms)** | 2.70 | 2.60 | -3.70% |
+| **Boot time (ms)** | 178.57 | 152.62 | -14.53% |
+| **RSS after run (MB)** | 122.66 | 120.59 | -1.69% |
+
 ## Why?
 
 Fastify’s decorator system is powerful and ergonomic, yet it has some limitations.
