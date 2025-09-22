@@ -3,13 +3,9 @@ import { spawn } from "node:child_process";
 import { join } from "node:path";
 import fs from "node:fs";
 import autocannon from "autocannon";
-import {
-  NUMBER_OF_DOMAINS,
-  PORT,
-  SERVICES_PER_DOMAIN,
-} from "./shared/config.mjs";
 import { clearTimeout, setTimeout } from "node:timers";
 import { buildMarkdownSummary } from "./markdown-summary.mjs";
+import { NUMBER_OF_DOMAINS, PORT, SERVICES_PER_DOMAIN } from "./shared.mjs";
 
 const __dirname = import.meta.dirname;
 
@@ -20,9 +16,9 @@ const DURATION_SECONDS = 10;
 const CONNECTIONS = 100;
 const PIPELINING = 1;
 const WARMUP_SECONDS = 3;
-const REPEATS = 10;
+const REPEATS = 30;
 
-const scenarios = [{ id: "baseline", path: "/unit-0/ping" }];
+const scenarios = [{ id: "baseline", path: "/ping/0" }];
 
 const variants = [
   {
@@ -39,7 +35,7 @@ const variants = [
   },
 ];
 
-function buildAlternatingSchedule(variants, repeats) {
+function buildABBASchedule(variants, repeats) {
   if (variants.length !== 2) {
     throw new Error("This scheduler assumes exactly 2 variants.");
   }
@@ -192,8 +188,8 @@ async function run() {
     /** @type {Record<string, any[]>} */
     const runsByVariant = {};
 
-    const schedule = buildAlternatingSchedule(variants, REPEATS);
-    console.log(`Schedule: ${schedule.map(s => s.name).join(', ')}`);
+    const schedule = buildABBASchedule(variants, REPEATS);
+    console.log(`Schedule: ${schedule.map((s) => s.name).join(", ")}`);
 
     console.log(
       `\n== Scenario: ${scenario.id} | Trials: ${schedule.length} ==`,
@@ -271,6 +267,7 @@ async function run() {
     warmupSeconds: WARMUP_SECONDS,
     nbDomains: NUMBER_OF_DOMAINS,
     nbServicesPerDomain: SERVICES_PER_DOMAIN,
+    repeats: REPEATS
   });
 
   const mdPath = join(outDir, `bench-${stamp}.md`);

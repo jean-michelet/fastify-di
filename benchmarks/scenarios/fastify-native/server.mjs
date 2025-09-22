@@ -1,43 +1,34 @@
 import Fastify from "fastify";
 import fp from "fastify-plugin";
 import {
-  PORT,
-  LOG_LEVEL,
+  attachMetricsRoute,
+  attachPingRoute,
+  createServiceSample,
+  forEachDependencies,
+  forEachDomain,
+  listen,
   NUMBER_OF_DOMAINS,
   SERVICES_PER_DOMAIN,
-} from "../../shared/config.mjs";
-import { attachMetricsRoute } from "../../shared/metrics.mjs";
-import { createServiceSample } from "../../shared/fixtures.mjs";
+} from "../../shared.mjs";
 
 // eslint-disable-next-line no-undef
 const startNs = process.hrtime.bigint();
-const app = Fastify({ logger: { level: LOG_LEVEL } });
-
-function createServicePlugin(domainIndex, serviceIndex) {
-  const name = `svc-${domainIndex}-${serviceIndex}`;
-  return fp(
-    async (instance) => {
-      instance.decorate(name, createServiceSample(name));
-    },
-    { name },
-  );
-}
+const app = Fastify();
 
 function createHttpPlugin(domainIndex) {
   return fp(
     async (instance) => {
-      for (let s = 0; s < SERVICES_PER_DOMAIN; s++) {
-        await instance.register(createServicePlugin(domainIndex, s));
-      }
-
-      instance.get(`/unit-${domainIndex}/ping`, async () => {
-        let accumulator = 1;
-        for (let s = 0; s < SERVICES_PER_DOMAIN; s++) {
-          const svc = instance[`svc-${domainIndex}-${s}`];
-          svc.increment();
-        }
-        return { pong: true, accumulator };
+      forEachDependencies(domainIndex, (name) => {
+        instance.register(
+          fp(
+            async (instance) =>
+              instance.decorate(name, createServiceSample(name)),
+            { name },
+          ),
+        );
       });
+
+      attachPingRoute(instance, instance, domainIndex);
     },
     { name: `http-${domainIndex}`, encapsulate: true },
   );
@@ -58,17 +49,8 @@ function createMetricsPlugin() {
   };
 }
 
-// Register domains
-for (let d = 0; d < NUMBER_OF_DOMAINS; d++) {
-  app.register(createHttpPlugin(d));
-}
+forEachDomain((i) => app.register(createHttpPlugin(i)));
 
 app.register(createMetricsPlugin());
 
-await app.listen({ port: PORT, host: "127.0.0.1" });
-// eslint-disable-next-line no-undef
-process.on("SIGTERM", async () => {
-  await app.close();
-  // eslint-disable-next-line no-undef
-  process.exit(0);
-});
+await listen(app)

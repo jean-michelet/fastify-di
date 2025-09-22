@@ -1,44 +1,34 @@
 import { createApp, createModule, createProvider } from "fastify-di";
 import {
-  PORT,
-  LOG_LEVEL,
+  attachMetricsRoute,
+  attachPingRoute,
+  createServiceSample,
+  forEachDependencies,
+  forEachDomain,
+  listen,
   NUMBER_OF_DOMAINS,
   SERVICES_PER_DOMAIN,
-} from "../../shared/config.mjs";
-import { attachMetricsRoute } from "../../shared/metrics.mjs";
-import { createServiceSample } from "../../shared/fixtures.mjs";
+} from "../../shared.mjs";
 
 // eslint-disable-next-line no-undef
 const startNs = process.hrtime.bigint();
 
-function createServiceProvider(domainIndex, serviceIndex) {
-  const name = `svc-${domainIndex}-${serviceIndex}`;
-  return createProvider({
-    name: `svc-${domainIndex}-${serviceIndex}`,
-    expose: () => createServiceSample(name),
-  });
-}
-
 function createHttpModule(domainIndex) {
-  const deps = Object.fromEntries(
-    Array.from({ length: SERVICES_PER_DOMAIN }, (_, s) => [
-      `svc-${domainIndex}-${s}`,
-      createServiceProvider(domainIndex, s),
-    ]),
+  const deps = {};
+  forEachDependencies(
+    domainIndex,
+    (name) =>
+      (deps[name] = createProvider({
+        name,
+        expose: () => createServiceSample(name),
+      })),
   );
 
   return createModule({
     name: `http-${domainIndex}`,
     deps,
     accessFastify: ({ fastify, deps }) => {
-      fastify.get(`/unit-${domainIndex}/ping`, async () => {
-        let accumulator = 1;
-        for (let s = 0; s < SERVICES_PER_DOMAIN; s++) {
-          const svc = deps[`svc-${domainIndex}-${s}`];
-          svc.increment();
-        }
-        return { pong: true, accumulator };
-      });
+      attachPingRoute(fastify, deps, domainIndex);
     },
   });
 }
@@ -61,9 +51,8 @@ function createMetricsModule() {
 }
 
 // Assemble root
-const domainModules = Array.from({ length: NUMBER_OF_DOMAINS }, (_, d) =>
-  createHttpModule(d),
-);
+const domainModules = [];
+forEachDomain((i) => domainModules.push(createHttpModule(i)));
 
 const root = createModule({
   name: "root",
@@ -72,14 +61,6 @@ const root = createModule({
 
 const app = await createApp({
   root,
-  serverOptions: { logger: { level: LOG_LEVEL } },
 });
 
-await app.listen({ port: PORT, host: "127.0.0.1" });
-
-// eslint-disable-next-line no-undef
-process.on("SIGTERM", async () => {
-  await app.close();
-  // eslint-disable-next-line no-undef
-  process.exit(0);
-});
+await listen(app);
