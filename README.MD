@@ -4,4 +4,5 @@ Read the proposal on Fastify repository: https://github.com/fastify/fastify/issu
 
 Read a more detailed [Proposal](./PROPOSAL.md).
 
-**EDIT**: I have decided to create my own organization in order to advance the ecosystem's architectural tools.
+**EDIT**: I have decided to create my own organization in order to advance the ecosystem's architectural tools:
+https://github.com/stratifyjs
