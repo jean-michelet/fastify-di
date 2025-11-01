@@ -29,7 +29,7 @@
   "author": "jean.antoine.michelet@gmail.com",
   "license": "MIT",
   "devDependencies": {
-    "@eslint/js": "^9.35.0",
+    "@eslint/js": "^9.39.0",
     "@types/node": "^24.5.2",
     "autocannon": "^8.0.0",
     "c8": "^10.1.3",
